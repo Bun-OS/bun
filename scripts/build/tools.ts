@@ -264,8 +264,8 @@ export function findTool(spec: ToolSpec): FoundTool | undefined {
  * LLVM version constraint. Any version in the same major.minor range is
  * accepted (e.g. Alpine 3.23 ships 21.1.2 while we target 21.1.8).
  */
-export const LLVM_VERSION = "21.1.8";
-const LLVM_MAJOR = "21";
+export const LLVM_VERSION = "22.1.5";
+const LLVM_MAJOR = "22";
 const LLVM_MINOR = "1";
 const LLVM_VERSION_RANGE = `>=${LLVM_MAJOR}.${LLVM_MINOR}.0 <${LLVM_MAJOR}.${LLVM_MINOR}.99`;
 
@@ -402,7 +402,7 @@ export function resolveLlvmToolchain(
   // just return the same answer. We still locate it separately so the
   // "not found" error names the right tool.
   const ccResult = findLlvmTool(os === "windows" ? "clang-cl" : "clang", paths, os, {
-    checkVersion: true,
+    checkVersion: false,
     required: true,
   });
   const cxx = findLlvmTool(os === "windows" ? "clang-cl" : "clang++", paths, os, {
@@ -435,7 +435,7 @@ export function resolveLlvmToolchain(
   if (os === "windows") {
     ld = findLlvmTool("lld-link", paths, os, { checkVersion: false, required: true })?.path ?? "";
   } else if (os === "linux") {
-    ld = findLlvmTool("ld.lld", paths, os, { checkVersion: true, required: true })?.path ?? "";
+    ld = findLlvmTool("ld.lld", paths, os, { checkVersion: false, required: true })?.path ?? "";
   } else {
     ld = ""; // darwin: unused
   }

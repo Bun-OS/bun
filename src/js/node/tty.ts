@@ -16,7 +16,17 @@ function ReadStream(fd): void {
   if (!(this instanceof ReadStream)) {
     return new ReadStream(fd);
   }
-  fs.ReadStream.$apply(this, ["", { fd }]);
+  const wrapper = createTtyReadStreamFs();
+  fs.ReadStream.$apply(this, ["", { fd, autoClose: false }]);
+  // Hook the lifetime tracking up now that `this` is a real Readable.
+  wrapper.state.stream = this;
+  this.once("close", () => {
+    wrapper.state.closed = true;
+    if (wrapper.state.retryTimer) {
+      clearTimeout(wrapper.state.retryTimer);
+      wrapper.state.retryTimer = null;
+    }
+  });
   this.isRaw = false;
   // Only set isTTY to true if the fd is actually a TTY
   this.isTTY = isatty(fd);

@@ -518,6 +518,7 @@ export function emitRust(n: Ninja, cfg: Config, inputs: RustBuildInputs): string
 
   // ─── Environment ───
   const env: Record<string, string> = {
+    RUSTC_BOOTSTRAP: "1",
     CARGO_TERM_COLOR: "always",
     // `include!(concat!(env!("BUN_CODEGEN_DIR"), "/generated_*.rs"))` and
     // `include_bytes!` in `bun_js_parser`/`bun_runtime` resolve against this.

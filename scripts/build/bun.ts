@@ -37,7 +37,6 @@ import { writeIfChanged } from "./fs.ts";
 import type { Ninja } from "./ninja.ts";
 import { emitRust, linkerMapPath, rustLibPath } from "./rust.ts";
 import { quote, slash } from "./shell.ts";
-import { emitShims } from "./shims.ts";
 import { computeDepLibs, resolveDep, type ResolvedDep } from "./source.ts";
 import { streamPath } from "./stream.ts";
 import { generateUnifiedSources } from "./unified.ts";
@@ -466,13 +465,12 @@ export function emitBun(n: Ninja, cfg: Config, sources: Sources): BunOutput {
   // reached transitively from those roots, so no `--whole-archive` wrapping
   // is needed; if a member ever isn't, `rustLinkFlags()` in rust.ts is the
   // wrapping helper.
-  const shims = emitShims(n, cfg);
   const linkObjects = [...allObjects, ...rustObjects, ...windowsRes];
-  const ldflags = [...flags.ldflags, ...systemLibs(cfg), ...manifestLinkFlags(cfg), ...shims.ldflags];
+  const ldflags = [...flags.ldflags, ...systemLibs(cfg), ...manifestLinkFlags(cfg)];
   const exe = link(n, cfg, exeName, linkObjects, {
     libs: depLibs,
     flags: ldflags,
-    implicitInputs: [...linkImplicitInputs(cfg), ...shims.implicitInputs],
+    implicitInputs: [...linkImplicitInputs(cfg)],
     // Declare the `-Wl,-Map=` side-product so `perf` symbolication picks it
     // up. Linux release only — the map flag itself is gated identically in
     // flags.ts.
@@ -612,13 +610,16 @@ function emitLinkOnly(n: Ninja, cfg: Config): BunOutput {
   // knows. Matches cmake's BUN_LINK_ONLY adding WINDOWS_RESOURCES directly.
   const windowsRes = cfg.windows ? [emitWindowsResources(n, cfg)] : [];
 
-  const shims = emitShims(n, cfg);
+  // Same hash-resolution step as full mode — the downloaded libbun_rust.a
+  // came from a different agent/rustc, so the checked-in hashes are even
+  // less likely to match. Linux release only; no-op elsewhere.
+  emitStartupOrder(n, cfg, rustObjects);
   const linkObjects = [archive, ...rustObjects, ...windowsRes];
-  const ldflags = [...flags.ldflags, ...systemLibs(cfg), ...manifestLinkFlags(cfg), ...shims.ldflags];
+  const ldflags = [...flags.ldflags, ...systemLibs(cfg), ...manifestLinkFlags(cfg)];
   const exe = link(n, cfg, exeName, linkObjects, {
     libs: depLibs,
     flags: ldflags,
-    implicitInputs: [...linkImplicitInputs(cfg), ...shims.implicitInputs],
+    implicitInputs: [...linkImplicitInputs(cfg)],
     linkerMapOutput: cfg.linux && cfg.release && !cfg.asan && !cfg.valgrind ? linkerMapPath(cfg) : undefined,
   });
 

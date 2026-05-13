@@ -227,7 +227,7 @@ export const globalFlags: Flag[] = [
     // Nix LLVM doesn't support zstd — but we target standard distros.
     // Nix users can override via profile if needed.
     flag: ["-g3", "-gz=zstd"],
-    when: c => c.unix && c.debug,
+    when: c => c.linux && c.debug,
     desc: "Full debug info, zstd-compressed",
   },
   {
